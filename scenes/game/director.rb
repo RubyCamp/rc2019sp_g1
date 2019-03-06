@@ -75,10 +75,10 @@ module Game
       @power_v_size += power_y        # y方向の力を計算
       @power_h_size += power_x        # x方向の力を計算
       #p @current
-      #@current.apply_force(@power_h_size * 2.5, -@power_v_size * 2.5)   # 計算した外力を加える
+      @current.apply_force(@power_h_size * 2.5, -@power_v_size * 2.5)   # 計算した外力を加える
       #@circle.apply_force(@power_h_size * 2.5, -@power_v_size * 2.5)
       #@circle.apply_force(100, -100)
-      @current.apply_force(100, -100)
+      #@current.apply_force(100, -100)
       @power_h_size = 1   # x方向の外力の初期化
       @power_v_size = 1   # y方向の外力の初期化
     end
