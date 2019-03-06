@@ -79,7 +79,8 @@ module Option
       end
 
       def scene_transition
-        Scene.move_to(:opening) if Input.mouse_push?(M_LBUTTON) && Input.mouse_x >= 0 && Input.mouse_x =< 20 && Input.mouse_x >= 0 && Input.mouse_x =< 20
+        Scene.move_to(:opening) if Input.mouse_push?(M_LBUTTON) && Input.mouse_x >= 0 && Input.mouse_x <= 20 && Input.mouse_x >= 0 && Input.mouse_x <= 20
         Scene.move_to(:game, @@options) if x == 1 && y == 1
       end
+  end
 end
