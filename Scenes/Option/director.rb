@@ -1,11 +1,12 @@
 module Option
   class Director
-    def options
-      @options
+    @@options = nil
+    def self.options
+      @@options
     end
 
     def options=(value)
-      @options = value
+      @@options = value
     end
 
     def initialize
