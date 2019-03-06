@@ -16,11 +16,11 @@ end
 class CPBase
   def self.walls
     walls = []
-    walls << CPStaticBox.new(0, 768, 1024, 790)
-    walls << CPStaticBox.new(-20, 0, 0, 768)
-    walls << CPStaticBox.new(0, -20, 1024, 0)
-    walls << CPStaticBox.new(1024, 0, 1044, 768)
-    walls
+    walls << CPStaticBox.new(0, 50, 500, 55)
+    walls << CPStaticBox.new(495, 55, 500, 550)
+    walls << CPStaticBox.new(0, 550, 500, 555)
+    walls << CPStaticBox.new(0, 55, 5, 550)
+    walls   # 壁の情報が入ったリストを返す
   end
 
   def apply_force(x, y)

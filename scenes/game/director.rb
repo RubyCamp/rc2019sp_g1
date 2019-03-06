@@ -1,121 +1,96 @@
 module Game
   class Director
     def initialize
-      @font = Font.new(24)
-      @space = CP::Space.new
-      @space.gravity = CP::Vec2.new(0, 150)
-      @current_stock = []
-      @current_stock << CPCircle.new(21, 727, 20, 1, C_BLUE)
-      @current_stock << CPBox.new(21, 727, 40, 40, 1, C_GREEN)
-      @current_stock << CPCircle.new(21, 727, 20, 1, C_RED)
-      @current = @current_stock.shift
-      @walls = CPBase.walls
-      @walls << CPStaticBox.new(200, 600, 800, 620)
-      @walls << CPStaticBox.new(650, 200, 1000, 220)
-      @space.add(@current)
-      @walls.each do |wall|
-        @space.add(wall)
-      end
-      @score = 0
+      #@bg_img = Image.load('images/opening_bg.png')   # 背景の設定
+      @bg_img = Image.new(500, 650, color=C_RED)    # 背景の設定
+      @font = Font.new(32)    # フォントの設定
+
+      @space = CP::Space.new  # 物理演算空間を作成
+      @space.gravity = CP::Vec2.new(0, 0)    # 物理演算空間に重力を設定(yを+方向に)
+
+      #@circle = CPCircle.new(250-15, 450, 15, 1, C_BLUE, 0.9, 0.8)   # 剛体の円形を設定
+      @current = CPCircle.new(250-15, 450, 15, 1, C_BLUE, 0.9, 0.8)   # 剛体の円形を設定
+      #@circle.apply_force(100, -500)   # x方向のみに外力を設定
+
+      @walls = CPBase.walls     # 剛体の壁を設定
+
       @power_bar_width = 10
       @power_v_size = 1
       @power_h_size = 1
-      @power_v = Image.new(@power_bar_width, @power_v_size, C_GREEN)
-      @power_h = Image.new(@power_h_size, @power_bar_width, C_GREEN)
-      @objects = [@current] + @walls
-      @goals = []
-      @goals << GoalCircle.new(300, 550, 20)
-      @goals << GoalBox.new(700, 160, 40)
-      @tanuki = Tanuki.new
+      #@power_v = Image.new(@power_bar_width, @power_v_size, C_GREEN)
+      #@power_h = Image.new(@power_h_size, @power_bar_width, C_GREEN)
+
+      #@space.add(@circle)     # 重力空間に丸のやつを追加
+      @space.add(@current)
+      @walls.each do |wall|   # 壁を物理空間に追加
+        @space.add(wall)
+      end
+
+      @start_time = Time.now    # 時間カウントを始める
+      @limit = 300              # 制限時間の設定
     end
 
+    # main.rb側のWindow.loop内で呼ばれるメソッド
     def play
-      @goals.each(&:draw)
-      @objects.each(&:draw)
-      shoot_tanuki
-      @tanuki.move
-      @tanuki.draw
-      Window.draw(@current.body.p.x, @current.body.p.y - @power_v_size, @power_v) if @power_v_size > 1
-      Window.draw(@current.body.p.x, @current.body.p.y, @power_h) if @power_h_size > 1
-      apply_up_power if Input.key_push?(K_UP)
-      apply_down_power if Input.key_push?(K_DOWN)
-      apply_right_power if Input.key_push?(K_RIGHT)
-      apply_left_power if Input.key_push?(K_LEFT)
-      shoot if Input.key_push?(K_SPACE)
-      @goals.each do |goal|
-        case goal.judgement(@current)
-        when 1
-          @score += 1
-          goal.begin_thumbup
-          current_transition
-        when -1
-          @score -= 1 unless goal.bombing
-          goal.begin_bomb
-        end
-      end
-      Window.draw_font(900, 10, "SCORE: #{@score}", @font)
-      @space.step(1 / 60.0)
-      scene_transition
+      Window.draw(0, 0, @bg_img)  # 背景の描画
+
+      time = Time.now           # 現在の時間をtimeに格納
+      limit_time = time - @start_time   # 経過時間を計算
+      count = (@limit - limit_time).to_i  # 残り時間を計算し、int型に変換
+      Window.draw_font(10, 10,"Time:#{count + 1}",@font)  # 残り時間を描画
+      #Window.draw_font(340, 600, 'Push Space key to start', @font, color: C_RED)   # 文字を描画
+
+      #@circle.draw      # 円の描画
+      @current.draw
+
+      @walls.each(&:draw)   # よくわからない。。。
+
+      #クリック時のx,y座標
+      start_shoot if Input.mouse_push?(M_LBUTTON)
+      #	@start_y = mouse_pos_y if Input.mouse_down?(M_LBUTTON)
+      #クリック終了後のx,y座標
+      #p @current
+      last_shoot if Input.mouse_release?(M_LBUTTON)
+      #	last_y = mouse_pos_y if Input.mouse_release?(M_LBUTTON)
+
+      @space.step(1 / 60.0)    # Windowの生成速度は1/60なので、物理演算の仮想空間も同じように時間が進むようにする
+
+      scene_transition    # シーン遷移
+
     end
 
     private
 
-    def shoot_tanuki
-      if rand(100) >= 99
-        shoot_tanuki_bomb
-      end
+    def start_shoot
+      @start_x = Input.mouse_pos_x    # インスタンス変数に格納
+      @start_y = Input.mouse_pos_y    # インスタンス変数に格納
     end
 
-    def shoot_tanuki_bomb
-      bomb = CPCircle.new(@tanuki.x + @tanuki.img.width / 2, @tanuki.img.height, 10, 2, C_WHITE)
-      bomb.body.apply_impulse(CP::Vec2.new(rand(200), rand(100) - 50), CP::Vec2.new(0, 0))
-      @space.add(bomb)
-      @objects << bomb
-    end
-
-    def current_transition
-      @space.remove(@current)
-      @objects.delete(@current)
-      @current = nil
-      if @current_stock.size >= 1
-        @current = @current_stock.shift
-        @space.add(@current)
-        @objects << @current
-      end
-    end
-
-    def apply_up_power
-      @power_v_size += 10
-      @power_v_size = Window.height if @power_v_size >= Window.height
-      @power_v = Image.new(@power_bar_width, @power_v_size, C_GREEN)
-    end
-
-    def apply_down_power
-      @power_v_size -= 10
-      @power_v_size = 1 if @power_v_size <= 1
-      @power_v = Image.new(@power_bar_width, @power_v_size, C_GREEN)
-    end
-
-    def apply_right_power
-      @power_h_size += 10
-      @power_h_size = Window.width if @power_h_size >= Window.width
-      @power_h = Image.new(@power_h_size, @power_bar_width, C_GREEN)
-    end
-
-    def apply_left_power
-      @power_h_size -= 10
-      @power_h_size = 1 if @power_h_size <= 1
-      @power_h = Image.new(@power_h_size, @power_bar_width, C_GREEN)
-    end
-
-    def shoot
-      @current.apply_force(@power_h_size * 5, -@power_v_size * 5)
-      @power_h_size = 1
-      @power_v_size = 1
+    def last_shoot
+      #p @current
+      @last_x = Input.mouse_pos_x     # インスタンス変数に格納
+      @last_y = Input.mouse_pos_y     # インスタンス変数に格納
+      power_x = @start_x - @last_x    # x座標の変位を計算
+      power_y = @last_y - @start_y    # y座標の変位を計算
+      @power_v_size += power_y        # y方向の力を計算
+      @power_h_size += power_x        # x方向の力を計算
+      #p @current
+      #@current.apply_force(@power_h_size * 2.5, -@power_v_size * 2.5)   # 計算した外力を加える
+      #@circle.apply_force(@power_h_size * 2.5, -@power_v_size * 2.5)
+      #@circle.apply_force(100, -100)
+      @current.apply_force(100, -100)
+      @power_h_size = 1   # x方向の外力の初期化
+      @power_v_size = 1   # y方向の外力の初期化
     end
 
     def scene_transition
       Scene.move_to(:ending) unless @current
     end
+
+    """
+    def scene_transition
+      Scene.move_to(:ending) unless @current
+    end
+    """
   end
 end

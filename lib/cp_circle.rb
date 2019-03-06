@@ -1,4 +1,6 @@
 class CPCircle < CPBase
+  #COLLISION_TYPE = 0   # ??
+  COLLISION_TYPE = 0
   attr_accessor :body, :shape
 
   def initialize(x, y, r, mass, color, e = 0.8, u = 0.8)
@@ -13,6 +15,6 @@ class CPCircle < CPBase
   end
 
   def draw
-    Window.draw_rot(@body.p.x - @r, @body.p.y - @r, @image, @body.a * 180.0 / Math::PI)
+    Window.draw_rot(@body.p.x - @r, @body.p.y - @r, @image, @body.a * 180.0 / Math::PI)     # 画面に円形を描画する
   end
 end
